@@ -17,10 +17,10 @@ connect_root:
 	docker exec -it postgres psql -U root root
 
 migrateup:
-	migrate -path db/migration -database "postgresql://root:123@localhost:5432/bank?sslmode=disable" -verbose up
+	migrate -path db/migration -database "postgresql://root:123@localhost:5432/root?sslmode=disable" -verbose up
 
 migratedown:
-	migrate -path db/migration -database "postgresql://root:123@localhost:5432/bank?sslmode=disable" -verbose down
+	migrate -path db/migration -database "postgresql://root:123@localhost:5432/root?sslmode=disable" -verbose down
 
 sqlc:
 	sqlc generate
