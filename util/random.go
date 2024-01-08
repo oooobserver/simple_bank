@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 const letters = "abcdefghijklmnopqrstuvwxyz"
 
 var currs = [...]string{"EUR", "USD", "RMB"}
+var emails = [...]string{"gmail", "icould", "hotvector"}
 
 func RandomInt(min, max int64) int64 {
 	return min + rng.Int63n(max-min+1)
@@ -38,4 +40,11 @@ func RandomCurrency() string {
 
 func RandomMoney() int64 {
 	return RandomInt(0, 100000)
+}
+
+func RandomEmail() string {
+	name := RandomOwner()
+	l := len(emails)
+	email := emails[rng.Intn(l)]
+	return fmt.Sprintf("%s@%s.com", name, email)
 }

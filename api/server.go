@@ -43,6 +43,10 @@ func create_route(router *gin.Engine, server *Server) {
 
 	// Transfer
 	router.POST("/transfer", server.createTransfer)
+
+	// User
+	router.POST("/user", server.createUser)
+	// router.GET("/user/:name", server.getUser)
 }
 
 // Start the server

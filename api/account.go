@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	db "simplebank/db/sqlc"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -30,6 +31,10 @@ func (server *Server) createAccount(ctx *gin.Context) {
 	// Use the store to create the account
 	account, err := server.store.CreateAccount(ctx, arg)
 	if err != nil {
+		if strings.Contains(err.Error(), "violates foreign key constraint") {
+			ctx.JSON(http.StatusForbidden, errorResponse(err))
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
