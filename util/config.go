@@ -1,12 +1,18 @@
 package util
 
-import "github.com/spf13/viper"
+import (
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 // Store all configuration of the app
 // Read from the config file
 type Config struct {
-	DB_SOURCE string `mapstructure:"DB_SOURCE"`
-	WEB_ADDR  string `mapstructure:"WEB_ADDR"`
+	DB_SOURCE       string        `mapstructure:"DB_SOURCE"`
+	WEB_ADDR        string        `mapstructure:"WEB_ADDR"`
+	SYMMETRIC_KEY   string        `mapstructure:"SYMMETRIC_KEY"`
+	ACCESS_DURATION time.Duration `mapstructure:"ACCESS_DURATION"`
 }
 
 func LoadConfig(path string) (con Config, err error) {
