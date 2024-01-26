@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+
 	// Read the config
 	config, err := util.LoadConfig(".")
 	if err != nil {

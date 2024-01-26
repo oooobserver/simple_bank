@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	db "simplebank/db/sqlc"
+	"simplebank/token"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,6 @@ import (
 )
 
 type createAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required"`
 }
 
@@ -22,8 +22,10 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authPayloadKey).(*token.Payload)
+
 	arg := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Name,
 		Balance:  0,
 		Currency: req.Currency,
 	}
@@ -65,6 +67,14 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
+	// If the account donesn't belong to the user, return the error
+	authPayload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	if authPayload.Name != account.Owner {
+		err := errors.New("account doesn't belong to the authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, account)
 }
 
@@ -80,7 +90,9 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authPayloadKey).(*token.Payload)
 	arg := db.ListAccountParams{
+		Owner:  authPayload.Name,
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}
