@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	db "simplebank/db/sqlc"
+	"simplebank/token"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -24,9 +25,15 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 
-	// Check the currency is valid
-	_, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
+	fromAccount, valid := server.validAccount(ctx, req.FromAccountID, req.Currency)
 	if !valid {
+		return
+	}
+
+	authPayload := ctx.MustGet(authPayloadKey).(*token.Payload)
+	if fromAccount.Owner != authPayload.Name {
+		err := errors.New("from account doesn't belong to the authenticated user")
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
