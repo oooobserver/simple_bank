@@ -1,7 +1,20 @@
 version: "3.9"
 services:
   postgres:
-    image: postgres
+    image: postgres:16-alpine
     environment:
-      - COMPOSE_PROJECT_NAME
-    command: echo "I'm running ${COMPOSE_PROJECT_NAME}"
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=root
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SOURCE=postgresql://root:123@postgres:5432/root?sslmode=disable
+    depends_on:
+      - postgres
+    entrypoint: [ "/app/wait-for.sh", "postgres:5432", "--", "/app/start.sh" ]
+    command: [ "/app/main" ]
