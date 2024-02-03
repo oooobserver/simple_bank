@@ -1,15 +1,13 @@
-name: Run unit test
+name: Deploy to production
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
 
-  test:
-    name: Test
+  build:
+    name: Build image
     runs-on: ubuntu-latest
 
     services:
