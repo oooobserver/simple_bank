@@ -1,2 +1,1 @@
-A simple bank back end written in go, using `postgres`, `docker`, `gin`.
-Instructed by `Tech School`.
+A simple bank back end written in go, using `postgres` as database and running it on `docker`, and package the whole app into docker, create network to connect. Use `gin` to perform http operations. Instructed by `Tech School`.
