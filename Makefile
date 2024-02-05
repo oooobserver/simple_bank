@@ -19,6 +19,9 @@ connect_root:
 migrateup:
 	migrate -path db/migration -database "postgresql://root:123@localhost:5432/root?sslmode=disable" -verbose up
 
+aws_migrateup:
+	migrate -path db/migration -database "postgresql://root:123456syd@simple-bankdb.cxa46u4qwwyq.us-east-1.rds.amazonaws.com:5432/simple_bank" -verbose up
+
 migratedown:
 	migrate -path db/migration -database "postgresql://root:123@localhost:5432/root?sslmode=disable" -verbose down
 
@@ -39,4 +42,4 @@ server:
 
 .PHONY: postgres createdb dropdb connect_bank connect_root 
 	rundb migrateup migratedown sqlc test server migrateup1
-	migratedown1
+	migratedown1 aws_migrateup
