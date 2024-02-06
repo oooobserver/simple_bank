@@ -13,6 +13,12 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
 
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.29' 
+      id: install
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -37,3 +43,9 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
         docker push -a $ECR_REGISTRY/$ECR_REPOSITORY
+
+    - name: Deploy to K8s
+      run: |
+        kubectl apply -f eks/aws-auth.yaml
+        kubectl apply -f eks/deploy.yaml
+        kubectl apply -f eks/service.yaml
