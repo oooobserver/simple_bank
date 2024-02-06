@@ -5,7 +5,7 @@ COPY . .
 RUN go build -o main main.go
 # Change the mirror
 # RUN echo "http://mirrors.aliyun.com/alpine/v3.18/main/" > /etc/apk/repositories
-RUN apk --no--cache add curl
+RUN apk add curl
 # Install the go-migrate
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.14.1/migrate.linux-amd64.tar.gz | tar xvz
 
