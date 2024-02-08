@@ -50,10 +50,12 @@ func create_route(server *Server) {
 
 	// User
 	router.POST("/user", server.createUser)
-	// router.GET("/user/:name", server.getUser)
 
 	// Login
 	router.POST("/user/login", server.loginUser)
+
+	// Renew
+	router.POST("/token/renew", server.renewAccessTokenr)
 
 	// Create a group to add the auth middleware
 	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
