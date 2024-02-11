@@ -6,15 +6,21 @@ import (
 	db "simplebank/db/sqlc"
 	"simplebank/pb"
 	"simplebank/util"
+	"simplebank/val"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	if vio := validateLoginUserRequest(req); vio != nil {
+		err := InvalidArgumentError(vio)
+		return nil, err
+	}
 	user, err := server.store.GetUser(ctx, req.GetName())
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -70,4 +76,16 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 	}
 
 	return resp, nil
+}
+
+func validateLoginUserRequest(req *pb.LoginUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateUserName(req.GetName()); err != nil {
+		violations = append(violations, fieldValidation("username", err))
+	}
+
+	if err := val.ValidatePasswaord(req.GetPassword()); err != nil {
+		violations = append(violations, fieldValidation("password", err))
+	}
+
+	return violations
 }
