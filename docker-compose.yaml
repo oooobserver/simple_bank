@@ -5,7 +5,9 @@ services:
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=123
+      # Local host DB
       # - POSTGRES_DB=root
+      # AWS RDS DB
       - POSTGRES_DB=simple_bank
     ports:
       - "5432:5432"
