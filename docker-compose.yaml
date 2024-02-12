@@ -5,8 +5,8 @@ services:
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=123
-      - POSTGRES_DB=root
-      # - POSTGRES_DB=simple_bank
+      # - POSTGRES_DB=root
+      - POSTGRES_DB=simple_bank
     ports:
       - "5432:5432"
   api:
