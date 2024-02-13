@@ -21,3 +21,10 @@ func ConverTime(t time.Time) pgtype.Timestamptz {
 	res.Time = t
 	return res
 }
+
+func ConvertString(s string) pgtype.Text {
+	return pgtype.Text{
+		String: s,
+		Valid:  true,
+	}
+}

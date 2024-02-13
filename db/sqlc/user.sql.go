@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -54,6 +56,46 @@ WHERE name = $1 LIMIT 1
 
 func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
 	row := q.db.QueryRow(ctx, getUser, name)
+	var i User
+	err := row.Scan(
+		&i.Name,
+		&i.HashedPassword,
+		&i.FullName,
+		&i.Email,
+		&i.PasswordLastChange,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET
+  hashed_password = COALESCE($1, hashed_password),
+  password_last_change = COALESCE($2, password_last_change),
+  full_name = COALESCE($3, full_name),
+  email = COALESCE($4, email)
+WHERE
+  name = $5
+RETURNING name, hashed_password, full_name, email, password_last_change, created_at
+`
+
+type UpdateUserParams struct {
+	HashedPassword     pgtype.Text        `json:"hashed_password"`
+	PasswordLastChange pgtype.Timestamptz `json:"password_last_change"`
+	FullName           pgtype.Text        `json:"full_name"`
+	Email              pgtype.Text        `json:"email"`
+	Name               string             `json:"name"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.HashedPassword,
+		arg.PasswordLastChange,
+		arg.FullName,
+		arg.Email,
+		arg.Name,
+	)
 	var i User
 	err := row.Scan(
 		&i.Name,
