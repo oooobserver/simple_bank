@@ -9,6 +9,7 @@ import (
 // Store all configuration of the app
 // Read from the config file
 type Config struct {
+	ENVIROMENT             string        `mapstructure:"ENVIROMENT"`
 	DB_SOURCE              string        `mapstructure:"DB_SOURCE"`
 	WEB_ADDR               string        `mapstructure:"WEB_ADDR"`
 	GRPC_ADDR              string        `mapstructure:"GRPC_ADDR"`

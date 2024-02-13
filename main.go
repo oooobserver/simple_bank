@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"net"
 	"net/http"
-	"simplebank/api"
 	db "simplebank/db/sqlc"
 	"simplebank/gapi"
 	"simplebank/pb"
@@ -25,13 +28,19 @@ func main() {
 	// Read the config
 	config, err := util.LoadConfig(".")
 	if err != nil {
-		log.Fatal("failed to read the config: ", err)
+		msg := fmt.Sprint("failed to read the config: ", err)
+		log.Fatal().Msg(msg)
+	}
+
+	if config.ENVIROMENT == "development" {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
 	// Create DB connection
 	connPool, err := pgxpool.New(context.Background(), config.DB_SOURCE)
 	if err != nil {
-		log.Fatal("failed to connect to the db: ", err)
+		msg := fmt.Sprint("failed to connect to the db: ", err)
+		log.Fatal().Msg(msg)
 	}
 
 	// Run db migration
@@ -49,43 +58,49 @@ func main() {
 func runDBMigration(mURL string, DBsource string) {
 	migration, err := migrate.New(mURL, DBsource)
 	if err != nil {
-		log.Fatal("can't create migration instance: ", err)
+		msg := fmt.Sprint("can't create migration instance: ", err)
+		log.Fatal().Msg(msg)
 	}
 
 	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal("can't migrate up: ", err)
+		msg := fmt.Sprint("can't migrate up: ", err)
+		log.Fatal().Msg(msg)
 	}
 
-	log.Println("db migrate up success!")
+	log.Info().Msg("db migrate up success!")
 }
 
 func runGRPCServer(con util.Config, store db.Store) {
-	grpcServer := grpc.NewServer()
 	server, err := gapi.NewServer(con, store)
 	if err != nil {
-		log.Fatal("failed to create the GRPC server: ", err)
+		msg := fmt.Sprint("failed to create the GRPC server: ", err)
+		log.Fatal().Msg(msg)
 	}
+
+	grpcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
+	grpcServer := grpc.NewServer(grpcLogger)
+
 	pb.RegisterSimpleBankServer(grpcServer, server)
 	// Registe the kind of the grpcServver
 	reflection.Register(grpcServer)
 
 	listener, err := net.Listen("tcp", con.GRPC_ADDR)
 	if err != nil {
-		log.Fatal("failed to create the listener: ", err)
+		log.Fatal().Err(err).Msg("cannot create listener")
 	}
 
-	fmt.Println("start the gRPC server")
+	log.Info().Msgf("start gRPC server at %s", listener.Addr().String())
 
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		log.Fatal("failed to listen at given port: ", err)
+		log.Fatal().Err(err).Msg("failed to listen at given port")
 	}
 }
 
 func runGatewayServer(con util.Config, store db.Store) {
 	server, err := gapi.NewServer(con, store)
 	if err != nil {
-		log.Fatal("failed to create the GRPC server: ", err)
+		log.Fatal().Err(err).Msg("failed to create the GRPC server")
 	}
 
 	grpcServeMux := runtime.NewServeMux()
@@ -94,7 +109,7 @@ func runGatewayServer(con util.Config, store db.Store) {
 
 	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcServeMux, server)
 	if err != nil {
-		log.Fatal("can't register handle server: ", err)
+		log.Fatal().Err(err).Msg("can't register handle server")
 	}
 
 	mux := http.NewServeMux()
@@ -102,26 +117,26 @@ func runGatewayServer(con util.Config, store db.Store) {
 
 	listener, err := net.Listen("tcp", con.WEB_ADDR)
 	if err != nil {
-		log.Fatal("failed to create the listener: ", err)
+		log.Fatal().Err(err).Msg("failed to create the listener")
 	}
 
-	log.Printf("start the gateway at %s", listener.Addr().String())
+	log.Info().Msgf("start the gateway at %s", listener.Addr().String())
 
 	err = http.Serve(listener, mux)
 	if err != nil {
-		log.Fatal("can't start gateway server: ", err)
+		log.Fatal().Err(err).Msg("can't start gateway server")
 	}
 }
 
-func runGinServer(con util.Config, store db.Store) {
-	server, err := api.NewServer(con, store)
-	if err != nil {
-		log.Fatal("failed to create the Gin server: ", err)
-	}
+// func runGinServer(con util.Config, store db.Store) {
+// 	server, err := api.NewServer(con, store)
+// 	if err != nil {
+// 		log.Fatal().Err(err).Msg("failed to create the Gin server")
+// 	}
 
-	// Start the server
-	err = server.Start(con.WEB_ADDR)
-	if err != nil {
-		log.Fatal("failed to listen at given port: ", err)
-	}
-}
+// 	// Start the server
+// 	err = server.Start(con.WEB_ADDR)
+// 	if err != nil {
+// 		log.Fatal().Err(err).Msg("failed to listen at given port")
+// 	}
+// }
