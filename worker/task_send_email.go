@@ -3,11 +3,9 @@ package worker
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/hibiken/asynq"
-	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
 
@@ -49,9 +47,10 @@ func (rtp *RedisTaskProcessor) ProcessTaskSendEmail(ctx context.Context, task *a
 
 	user, err := rtp.store.GetUser(ctx, payload.Username)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("user don't exits: %w", asynq.SkipRetry)
-		}
+		// Allow retry
+		// if errors.Is(err, pgx.ErrNoRows) {
+		// 	return fmt.Errorf("user don't exits: %w", asynq.SkipRetry)
+		// }
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
