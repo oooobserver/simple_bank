@@ -57,6 +57,11 @@ evans:
 
 .PHONY: evans
 
+redis:
+	docker run --name redis -p 6379:6379 -d redis:7.2.4-alpine
+.PHONY: redis
+
+
 .PHONY: postgres createdb dropdb connect_bank connect_root 
 	rundb migrateup migratedown sqlc test server migrateup1
 	migratedown1 aws_migrateup 

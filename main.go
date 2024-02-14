@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -14,6 +15,7 @@ import (
 	"simplebank/gapi"
 	"simplebank/pb"
 	"simplebank/util"
+	"simplebank/worker"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -48,11 +50,30 @@ func main() {
 
 	store := db.NewStore(connPool)
 
+	// Create the task distributor
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.REDIS_ADDRESS,
+	}
+
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+
+	// Start the processor
+	go runTaskProcessor(redisOpt, store)
+
 	// Start the GRPC server
-	go runGRPCServer(config, store)
+	go runGRPCServer(config, store, taskDistributor)
 
 	// Start the Gatewway server
-	runGatewayServer(config, store)
+	runGatewayServer(config, store, taskDistributor)
+}
+
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+	log.Info().Msg("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failer to create the task processor")
+	}
 }
 
 func runDBMigration(mURL string, DBsource string) {
@@ -70,8 +91,8 @@ func runDBMigration(mURL string, DBsource string) {
 	log.Info().Msg("db migrate up success!")
 }
 
-func runGRPCServer(con util.Config, store db.Store) {
-	server, err := gapi.NewServer(con, store)
+func runGRPCServer(con util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(con, store, taskDistributor)
 	if err != nil {
 		msg := fmt.Sprint("failed to create the GRPC server: ", err)
 		log.Fatal().Msg(msg)
@@ -97,8 +118,8 @@ func runGRPCServer(con util.Config, store db.Store) {
 	}
 }
 
-func runGatewayServer(con util.Config, store db.Store) {
-	server, err := gapi.NewServer(con, store)
+func runGatewayServer(con util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(con, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create the GRPC server")
 	}

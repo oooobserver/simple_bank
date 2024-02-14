@@ -7,7 +7,10 @@ import (
 	"simplebank/pb"
 	"simplebank/util"
 	"simplebank/val"
+	"simplebank/worker"
+	"time"
 
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -39,6 +42,22 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 			return nil, status.Errorf(codes.Internal, "user already exits: %s", err)
 		}
 		return nil, status.Errorf(codes.Internal, "failed to create the user: %s", err)
+	}
+
+	// TODO:
+	// Send verify email, async
+	taskPayload := &worker.PayloadSendEmail{
+		Username: user.Name,
+	}
+
+	opts := []asynq.Option{
+		asynq.MaxRetry(10),
+		asynq.ProcessIn(5 * time.Second),
+		asynq.Queue(worker.QueueCritical),
+	}
+	err = server.taskDistributor.DistributeTaskSendEmail(ctx, taskPayload, opts...)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to send the email: %s", err)
 	}
 
 	resp := &pb.CreateUserResponse{
