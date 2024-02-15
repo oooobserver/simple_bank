@@ -18,6 +18,9 @@ type Config struct {
 	ACCESS_DURATION        time.Duration `mapstructure:"ACCESS_DURATION"`
 	REFRESH_TOKEN_DURATION time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	REDIS_ADDRESS          string        `mapstructure:"REDIS_ADDRESS"`
+	EMAIL_SENDER_NAME      string        `mapstructure:"EMAIL_SENDER_NAME"`
+	EMAIL_SENDER_ADDRESS   string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
+	EMAIL_SENDER_PASSWORD  string        `mapstructure:"EMAIL_SENDER_PASSWORD"`
 }
 
 func LoadConfig(path string) (con Config, err error) {
